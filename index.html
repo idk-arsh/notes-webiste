@@ -690,38 +690,48 @@ Browsers block microphone on <code>file://</code> URLs. Fix it one of these ways
       console.warn('Unhandled speech error:', e.error);
     };
 
-    let interimText = '';
-
     recognition.onresult = (event) => {
-      interimText = '';
       let finalChunk = '';
+      let interimChunk = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const text = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
           finalChunk += text + ' ';
         } else {
-          interimText += text;
+          interimChunk += text;
         }
       }
+      // Commit finals immediately into fullTranscript
       if (finalChunk) fullTranscript += finalChunk;
-      transcriptEl.value = (fullTranscript + interimText).trim();
-      // Auto-scroll textarea to bottom
+      // Show finals + live interim
+      transcriptEl.value = (fullTranscript + interimChunk).trim();
       transcriptEl.scrollTop = transcriptEl.scrollHeight;
     };
   }
 
   function stopRecording() {
+    // Flag stopped FIRST so onend won't auto-restart
     isRecording = false;
-    try {
-      if (recognition) {
-        recognition.onend = null; // prevent auto-restart
-        recognition.abort();
+
+    if (recognition) {
+      const rec = recognition;
+      recognition = null;
+
+      // Use stop() not abort() — stop() flushes the last pending result, abort() discards it
+      rec.onend = () => {
+        transcriptEl.value = fullTranscript.trim();
+        transcriptEl.scrollTop = transcriptEl.scrollHeight;
+      };
+      try { rec.stop(); } catch(e) {
+        transcriptEl.value = fullTranscript.trim();
       }
-    } catch(e) { /* ignore */ }
-    recognition = null;
+    } else {
+      transcriptEl.value = fullTranscript.trim();
+    }
+
     micBtn.classList.remove('recording');
     micBtn.innerHTML = '🎤';
-    micLabel.textContent = 'Done. Edit transcript above if needed, then click Format.';
+    micLabel.textContent = '✅ Done! Edit transcript above if needed, then click Format.';
     micLabel.classList.remove('recording');
     waveform.classList.remove('active');
   }
