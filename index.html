@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Daily Tracker — Voice Logger</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0b0d11;
+      --surface: #13161d;
+      --surface2: #1a1f2a;
+      --border: #222836;
+      --accent: #4fffb0;
+      --accent2: #00cfff;
+      --warn: #ff6b6b;
+      --text: #e8eaf0;
+      --muted: #6b7494;
+      --recording: #ff4757;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 80% 10%, rgba(79,255,176,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 30% at 10% 80%, rgba(0,207,255,0.05) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+      width: 100%;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+
+    .logo-mark {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+      box-shadow: 0 0 24px rgba(79,255,176,0.25);
+    }
+
+    .header-text h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-text p {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    /* Config bar */
+    .config-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .config-bar label {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .config-bar input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 8px 12px;
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      width: 90px;
+    }
+
+    .config-bar input:focus { outline: none; border-color: var(--accent); }
+
+    .config-sep { width: 1px; height: 32px; background: var(--border); }
+
+    .date-display {
+      margin-left: auto;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--accent);
+    }
+
+    /* Voice recorder card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .card-body { padding: 24px; }
+
+    /* Mic button area */
+    .mic-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 20px 0;
+    }
+
+    .mic-btn {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      font-size: 36px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .mic-btn:hover {
+      background: rgba(79,255,176,0.08);
+      transform: scale(1.05);
+    }
+
+    .mic-btn.recording {
+      border-color: var(--recording);
+      color: var(--recording);
+      animation: pulse-ring 1.2s ease-out infinite;
+    }
+
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(255,71,87,0.5); }
+      70% { box-shadow: 0 0 0 20px rgba(255,71,87,0); }
+      100% { box-shadow: 0 0 0 0 rgba(255,71,87,0); }
+    }
+
+    .mic-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    .mic-label.recording { color: var(--recording); }
+
+    /* Waveform */
+    .waveform {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      height: 36px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .waveform.active { opacity: 1; }
+
+    .wave-bar {
+      width: 3px;
+      border-radius: 2px;
+      background: var(--recording);
+      animation: wave-anim 0.8s ease-in-out infinite;
+    }
+
+    .wave-bar:nth-child(1) { animation-delay: 0s; }
+    .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+    .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+    .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+    .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+    .wave-bar:nth-child(6) { animation-delay: 0.3s; }
+    .wave-bar:nth-child(7) { animation-delay: 0.2s; }
+    .wave-bar:nth-child(8) { animation-delay: 0.1s; }
+    .wave-bar:nth-child(9) { animation-delay: 0s; }
+
+    @keyframes wave-anim {
+      0%, 100% { height: 6px; }
+      50% { height: 28px; }
+    }
+
+    /* Transcript area */
+    .transcript-area {
+      width: 100%;
+      min-height: 130px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      resize: vertical;
+      margin-top: 16px;
+      transition: border-color 0.2s;
+    }
+
+    .transcript-area:focus { outline: none; border-color: var(--accent); }
+
+    .transcript-area::placeholder { color: var(--muted); }
+
+    /* Action buttons */
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 11px 22px;
+      border-radius: 8px;
+      border: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.18s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .btn-primary:hover { background: #3de8a0; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+
+    .btn-loading {
+      background: var(--surface2);
+      color: var(--muted);
+      cursor: wait;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid transparent;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Output section */
+    .output-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .output-card.visible { display: block; }
+
+    .output-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .output-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .copy-btn {
+      padding: 7px 16px;
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover { background: rgba(79,255,176,0.1); }
+    .copy-btn.copied { background: var(--accent); color: #000; }
+
+    .output-content {
+      padding: 20px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12.5px;
+      line-height: 1.8;
+      color: #b0bcd4;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 480px;
+      overflow-y: auto;
+    }
+
+    /* Saved entries */
+    .history-section {
+      margin-top: 32px;
+    }
+
+    .history-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .history-count {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2px 8px;
+      font-size: 11px;
+    }
+
+    .history-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .history-item:hover { border-color: var(--accent2); }
+
+    .history-date {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--accent2);
+      white-space: nowrap;
+      padding-top: 2px;
+    }
+
+    .history-preview {
+      font-size: 13px;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .history-del {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0 4px;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+    }
+
+    .history-del:hover { opacity: 1; color: var(--warn); }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px;
+      color: var(--muted);
+      font-size: 13px;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 24px;
+      font-size: 14px;
+      color: var(--text);
+      z-index: 100;
+      transition: transform 0.3s ease, opacity 0.3s;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .badge-green { background: rgba(79,255,176,0.12); color: var(--accent); }
+    .badge-blue  { background: rgba(0,207,255,0.12);  color: var(--accent2); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-mark">🎙️</div>
+    <div class="header-text">
+      <h1>Daily Tracker Voice Logger</h1>
+      <p>Speak your day → AI formats it → paste into your spreadsheet</p>
+    </div>
+  </div>
+
+  <!-- Config bar -->
+  <div class="config-bar">
+    <label>Last S.NO</label>
+    <input type="number" id="lastSNo" value="279" min="1" title="Last serial number in your tracker"/>
+    <div class="config-sep"></div>
+    <label>Date</label>
+    <input type="text" id="trackDate" placeholder="e.g. 3/4/2026" style="width:110px"/>
+    <div class="config-sep"></div>
+    <label>Hours/day</label>
+    <input type="number" id="hoursPerDay" value="8" min="1" max="12" style="width:70px"/>
+    <div class="date-display" id="todayDisplay"></div>
+  </div>
+
+  <!-- Voice Card -->
+  <div class="card">
+    <div class="card-header">
+      <span style="color: var(--accent)">●</span> Voice Input
+      <span class="badge badge-green">Browser Speech Recognition — No API Key</span>
+    </div>
+    <div class="card-body">
+
+      <div class="mic-area">
+        <button class="mic-btn" id="micBtn" title="Click to start/stop recording">🎤</button>
+        <div class="mic-label" id="micLabel">Click to Start Recording</div>
+        <div class="waveform" id="waveform">
+          <div class="wave-bar" style="height:6px"></div>
+          <div class="wave-bar" style="height:6px"></div>
+          <div class="wave-bar" style="height:6px"></div>
+          <div class="wave-bar" style="height:6px"></div>
+          <div class="wave-bar" style="height:6px"></div>
+          <div class="wave-bar" style="height:6px"></div>
+          <div class="wave-bar" style="height:6px"></div>
+          <div class="wave-bar" style="height:6px"></div>
+          <div class="wave-bar" style="height:6px"></div>
+        </div>
+      </div>
+
+      <textarea class="transcript-area" id="transcript"
+        placeholder="Or type/paste your raw day summary here — e.g. 'Morning: read HHS-FDA docs. 10am standup. Call with JD on website and Databricks. Worked on USDA FSIS write-up. Farewell call for Rakesh at 1:30. Continued HTML capability page. Updated proposal automation.'">
+      </textarea>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="formatBtn">
+          ✨ Format as Tracker Rows
+        </button>
+        <button class="btn btn-ghost" id="clearBtn">Clear</button>
+        <button class="btn btn-ghost" id="appendBtn">➕ Append New Session</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Output Card -->
+  <div class="output-card" id="outputCard">
+    <div class="output-header">
+      <span class="output-title">📋 Formatted Tracker Rows — Paste Ready</span>
+      <button class="copy-btn" id="copyBtn">Copy All</button>
+    </div>
+    <div class="output-content" id="outputContent"></div>
+  </div>
+
+  <!-- History -->
+  <div class="history-section">
+    <div class="history-title">
+      Saved Sessions
+      <span class="history-count" id="historyCount">0</span>
+    </div>
+    <div id="historyList"></div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let recognition = null;
+  let isRecording = false;
+  let fullTranscript = '';
+  let sessions = JSON.parse(localStorage.getItem('tracker_sessions') || '[]');
+
+  // ── DOM refs ───────────────────────────────────────────────────────────────
+  const micBtn       = document.getElementById('micBtn');
+  const micLabel     = document.getElementById('micLabel');
+  const waveform     = document.getElementById('waveform');
+  const transcriptEl = document.getElementById('transcript');
+  const formatBtn    = document.getElementById('formatBtn');
+  const clearBtn     = document.getElementById('clearBtn');
+  const appendBtn    = document.getElementById('appendBtn');
+  const outputCard   = document.getElementById('outputCard');
+  const outputContent= document.getElementById('outputContent');
+  const copyBtn      = document.getElementById('copyBtn');
+  const historyList  = document.getElementById('historyList');
+  const historyCount = document.getElementById('historyCount');
+  const todayDisplay = document.getElementById('todayDisplay');
+  const toast        = document.getElementById('toast');
+
+  // ── Init date ──────────────────────────────────────────────────────────────
+  const today = new Date();
+  const todayStr = `${today.getMonth()+1}/${today.getDate()}/${today.getFullYear()}`;
+  document.getElementById('trackDate').value = todayStr;
+  todayDisplay.textContent = `Today: ${todayStr}`;
+
+  // ── Speech Recognition ─────────────────────────────────────────────────────
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    micBtn.innerHTML = '🚫';
+    micLabel.innerHTML = 'Speech recognition not supported.<br>Please use <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>.';
+    micBtn.disabled = true;
+    micBtn.style.borderColor = 'var(--warn)';
+    micBtn.style.color = 'var(--warn)';
+  }
+
+  // Check if running on file:// protocol and warn user
+  if (location.protocol === 'file:') {
+    micLabel.innerHTML = '⚠️ Open via a server for mic access. See tip below.';
+    const tip = document.createElement('div');
+    tip.style.cssText = 'background:#1a1200;border:1px solid #f0a000;border-radius:10px;padding:14px 18px;margin-top:12px;font-size:13px;color:#f0c040;line-height:1.7';
+    tip.innerHTML = `<strong>⚠️ Mic blocked on local files</strong><br>
+Browsers block microphone on <code>file://</code> URLs. Fix it one of these ways:<br><br>
+<strong>Option 1 (Easiest):</strong> Drag this file into <a href="https://stackblitz.com" target="_blank" style="color:var(--accent2)">stackblitz.com</a> or open it in <a href="https://codepen.io" target="_blank" style="color:var(--accent2)">codepen.io</a><br>
+<strong>Option 2:</strong> In Chrome, go to <code>chrome://flags</code> → search <em>"insecure origins"</em> → add your file path<br>
+<strong>Option 3:</strong> Run <code>npx serve .</code> in the folder, then open <code>http://localhost:3000</code><br>
+<strong>Meanwhile:</strong> You can still type or paste your day summary below and click Format ✨`;
+    document.querySelector('.mic-area').after(tip);
+  }
+
+  function initRecognition() {
+    if (recognition) {
+      try { recognition.abort(); } catch(e) {}
+    }
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      isRecording = true;
+      micBtn.classList.add('recording');
+      micBtn.innerHTML = '⏹️';
+      micLabel.textContent = 'Recording... speak clearly. Click again to stop.';
+      micLabel.classList.add('recording');
+      waveform.classList.add('active');
+    };
+
+    recognition.onend = () => {
+      // Only restart if user hasn't explicitly stopped
+      if (isRecording) {
+        try {
+          setTimeout(() => {
+            if (isRecording) recognition.start();
+          }, 200);
+        } catch(e) { /* ignore */ }
+      }
+    };
+
+    recognition.onerror = (e) => {
+      console.warn('Speech error:', e.error);
+      if (e.error === 'no-speech') {
+        // Silence — just ignore, recognition.onend will restart it
+        return;
+      }
+      if (e.error === 'not-allowed' || e.error === 'permission-denied') {
+        stopRecording();
+        showToast('❌ Mic permission denied. Allow microphone in browser settings.');
+        micLabel.innerHTML = '❌ Mic blocked — click the 🔒 icon in your address bar and allow microphone.';
+        return;
+      }
+      if (e.error === 'network') {
+        // Chrome needs network for speech on some versions — just retry
+        return;
+      }
+      if (e.error === 'audio-capture') {
+        stopRecording();
+        showToast('❌ No microphone found. Check your mic is connected.');
+        micLabel.textContent = '❌ No microphone detected.';
+        return;
+      }
+      // For other errors, silently continue
+      console.warn('Unhandled speech error:', e.error);
+    };
+
+    let interimText = '';
+
+    recognition.onresult = (event) => {
+      interimText = '';
+      let finalChunk = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const text = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalChunk += text + ' ';
+        } else {
+          interimText += text;
+        }
+      }
+      if (finalChunk) fullTranscript += finalChunk;
+      transcriptEl.value = (fullTranscript + interimText).trim();
+      // Auto-scroll textarea to bottom
+      transcriptEl.scrollTop = transcriptEl.scrollHeight;
+    };
+  }
+
+  function stopRecording() {
+    isRecording = false;
+    try {
+      if (recognition) {
+        recognition.onend = null; // prevent auto-restart
+        recognition.abort();
+      }
+    } catch(e) { /* ignore */ }
+    recognition = null;
+    micBtn.classList.remove('recording');
+    micBtn.innerHTML = '🎤';
+    micLabel.textContent = 'Done. Edit transcript above if needed, then click Format.';
+    micLabel.classList.remove('recording');
+    waveform.classList.remove('active');
+  }
+
+  micBtn.onclick = async () => {
+    if (!SpeechRecognition) return;
+
+    if (!isRecording) {
+      // Request mic permission explicitly first
+      try {
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err) {
+        showToast('❌ Mic access denied. Allow microphone and try again.');
+        micLabel.innerHTML = '❌ Microphone access denied.<br>Click the 🔒 lock icon in your address bar → allow mic → refresh.';
+        return;
+      }
+
+      fullTranscript = transcriptEl.value.trim() ? transcriptEl.value.trim() + ' ' : '';
+      initRecognition();
+      try {
+        recognition.start();
+      } catch(e) {
+        showToast('Could not start recording: ' + e.message);
+        micLabel.textContent = 'Error starting mic. Refresh and try again.';
+      }
+    } else {
+      stopRecording();
+    }
+  };
+
+  // ── Format using Claude API ────────────────────────────────────────────────
+  formatBtn.onclick = async () => {
+    const raw = transcriptEl.value.trim();
+    if (!raw) { showToast('Nothing to format yet. Speak or type first.'); return; }
+
+    const lastSNo   = parseInt(document.getElementById('lastSNo').value) || 279;
+    const dateVal   = document.getElementById('trackDate').value.trim() || todayStr;
+    const hoursDay  = parseFloat(document.getElementById('hoursPerDay').value) || 8;
+
+    formatBtn.innerHTML = '<div class="spinner"></div> Formatting...';
+    formatBtn.classList.add('btn-loading');
+    formatBtn.classList.remove('btn-primary');
+    formatBtn.disabled = true;
+
+    const systemPrompt = `You are a work tracker formatter. Convert raw voice/text summaries into tab-separated tracker rows.
+
+FORMAT (tab-separated, include header row on first call):
+S. NO\tDate\tTasks handled\tStatus\tComments / Challenges\tCategory\tImpact\tFrom\tTo\tTIME
+
+RULES:
+- Continue S.NO from the number provided (increment each row)
+- Status = always "Completed"
+- Category: "Production" (actual work output), "Meeting" (calls/standups), "Knowledge" (reading/reviewing), "Training"
+- Impact: quantified, professional phrasing like "Improved compliance by ~15%", "Reduced rework by ~30%", "Shipley score improved from X to Y" — infer realistic metrics based on task type
+- Times: realistic business hours (mostly 8:00:00–17:00:00 range), HH:MM:SS format, 24h
+- TIME column: duration as H:MM format (e.g. 1:30, 0:45, 2:00)
+- Total time per day MUST sum EXACTLY to ${hoursDay}:00 hours (${hoursDay * 60} minutes). If multiple days, each day = exactly ${hoursDay}:00. Distribute time sensibly: deep work tasks get 1–2.5h, meetings/standups get 0:15–1:00, quick tasks 0:15–0:30
+- Standup/daily sync = always near start of day (9:00–10:00 range)
+- Lunch gap is implicit — no row needed, just leave a gap in the From/To times
+- If date isn't mentioned, use: ${dateVal}
+- Comments/Challenges: concise, professional, 1 short sentence describing context or challenge faced
+- Tasks handled: clean, professional title (no first-person "I", use action-oriented phrasing)
+- Output ONLY the tab-separated rows (with header). No explanations, no markdown, no extra text.`;
+
+    const userPrompt = `Last S.NO: ${lastSNo}
+Date (use this if not mentioned): ${dateVal}
+Hours per day: ${hoursDay}
+
+Raw summary:
+${raw}
+
+Format this into tracker rows now.`;
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }]
+        })
+      });
+
+      const data = await response.json();
+      const result = data.content?.[0]?.text?.trim() || '';
+
+      if (!result) throw new Error('Empty response from AI');
+
+      outputContent.textContent = result;
+      outputCard.classList.add('visible');
+
+      // Save session
+      const session = {
+        id: Date.now(),
+        date: dateVal,
+        raw: raw,
+        formatted: result,
+        savedAt: new Date().toLocaleString()
+      };
+      sessions.unshift(session);
+      if (sessions.length > 20) sessions.pop();
+      localStorage.setItem('tracker_sessions', JSON.stringify(sessions));
+      renderHistory();
+
+      // Auto-update last S.NO
+      const rows = result.split('\n').filter(r => /^\d+\t/.test(r));
+      if (rows.length > 0) {
+        const lastRow = rows[rows.length - 1];
+        const lastNum = parseInt(lastRow.split('\t')[0]);
+        if (!isNaN(lastNum)) document.getElementById('lastSNo').value = lastNum;
+      }
+
+      showToast('✓ Formatted! Click "Copy All" to grab the rows.');
+
+    } catch (err) {
+      // Fallback: generate structured prompt for manual use
+      const fallbackOutput = generateFallbackOutput(raw, lastSNo, dateVal, hoursDay);
+      outputContent.textContent = fallbackOutput;
+      outputCard.classList.add('visible');
+      showToast('AI unavailable — generated template. Edit as needed.');
+    }
+
+    formatBtn.innerHTML = '✨ Format as Tracker Rows';
+    formatBtn.classList.remove('btn-loading');
+    formatBtn.classList.add('btn-primary');
+    formatBtn.disabled = false;
+  };
+
+  // ── Fallback output ────────────────────────────────────────────────────────
+  function generateFallbackOutput(raw, lastSNo, dateVal, hoursDay) {
+    const lines = raw.split(/[.,;!?\n]+/).map(l => l.trim()).filter(l => l.length > 8);
+    let sno = lastSNo + 1;
+    let rows = ['S. NO\tDate\tTasks handled\tStatus\tComments / Challenges\tCategory\tImpact\tFrom\tTo\tTIME'];
+
+    const totalMins = hoursDay * 60;
+    const perTask = Math.floor(totalMins / Math.max(lines.length, 1));
+    let cur = 8 * 60; // 8:00 in minutes
+
+    lines.forEach((line, i) => {
+      const fromH = Math.floor(cur / 60).toString().padStart(2,'0');
+      const fromM = (cur % 60).toString().padStart(2,'0');
+      const dur = i === lines.length - 1 ? (totalMins - (cur - 8*60)) : perTask;
+      cur += dur;
+      // add lunch gap
+      if (cur >= 12*60 && cur < 13*60 && i < lines.length - 2) cur = 13 * 60;
+      const toH = Math.floor(cur / 60).toString().padStart(2,'0');
+      const toM  = (cur % 60).toString().padStart(2,'0');
+      const durH = Math.floor(dur / 60);
+      const durM = (dur % 60).toString().padStart(2,'0');
+
+      const cat = line.toLowerCase().includes('call') || line.toLowerCase().includes('standup') || line.toLowerCase().includes('meeting') ? 'Meeting' : 'Production';
+
+      rows.push([
+        sno++,
+        dateVal,
+        line.charAt(0).toUpperCase() + line.slice(1),
+        'Completed',
+        'Refer to raw notes for context',
+        cat,
+        'Improved output quality and task efficiency',
+        `${fromH}:${fromM}:00`,
+        `${toH}:${toM}:00`,
+        `${durH}:${durM}`
+      ].join('\t'));
+    });
+    return rows.join('\n');
+  }
+
+  // ── Copy ───────────────────────────────────────────────────────────────────
+  copyBtn.onclick = () => {
+    const text = outputContent.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      copyBtn.textContent = '✓ Copied!';
+      copyBtn.classList.add('copied');
+      setTimeout(() => {
+        copyBtn.textContent = 'Copy All';
+        copyBtn.classList.remove('copied');
+      }, 2000);
+    });
+  };
+
+  // ── Clear & Append ─────────────────────────────────────────────────────────
+  clearBtn.onclick = () => {
+    transcriptEl.value = '';
+    fullTranscript = '';
+    outputCard.classList.remove('visible');
+    micLabel.textContent = 'Click to Start Recording';
+  };
+
+  appendBtn.onclick = () => {
+    if (isRecording) stopRecording();
+    const cur = transcriptEl.value.trim();
+    transcriptEl.value = cur + (cur ? '\n\n' : '') + '--- New Session ---\n';
+    fullTranscript = transcriptEl.value;
+    transcriptEl.focus();
+    showToast('Appended separator. Start speaking or typing the next day.');
+  };
+
+  // ── History ────────────────────────────────────────────────────────────────
+  function renderHistory() {
+    historyCount.textContent = sessions.length;
+    if (sessions.length === 0) {
+      historyList.innerHTML = '<div class="empty-state">No saved sessions yet. Format your first day to see it here.</div>';
+      return;
+    }
+    historyList.innerHTML = sessions.map(s => `
+      <div class="history-item" onclick="loadSession(${s.id})">
+        <div class="history-date">${s.date}<br/><span style="color:var(--muted);font-size:10px">${s.savedAt}</span></div>
+        <div class="history-preview">${s.raw.slice(0, 120).replace(/\n/g, ' ')}…</div>
+        <button class="history-del" onclick="deleteSession(event, ${s.id})" title="Delete">✕</button>
+      </div>
+    `).join('');
+  }
+
+  window.loadSession = (id) => {
+    const s = sessions.find(x => x.id === id);
+    if (!s) return;
+    transcriptEl.value = s.raw;
+    fullTranscript = s.raw;
+    outputContent.textContent = s.formatted;
+    outputCard.classList.add('visible');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showToast('Session loaded.');
+  };
+
+  window.deleteSession = (e, id) => {
+    e.stopPropagation();
+    sessions = sessions.filter(s => s.id !== id);
+    localStorage.setItem('tracker_sessions', JSON.stringify(sessions));
+    renderHistory();
+  };
+
+  // ── Toast ──────────────────────────────────────────────────────────────────
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3200);
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  renderHistory();
+</script>
+</body>
+</html>
