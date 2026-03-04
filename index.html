@@ -581,344 +581,269 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  // ── State ──────────────────────────────────────────────────────────────────
-  let recognition = null;
-  let isRecording = false;
-  let fullTranscript = '';
-  let sessions = JSON.parse(localStorage.getItem('tracker_sessions') || '[]');
+  // ── State ─────────────────────────────────────────────────────────────────
+  let isRecording   = false;
+  let savedText     = '';   // all committed final text so far
+  let sessions      = JSON.parse(localStorage.getItem('tracker_sessions') || '[]');
 
-  // ── DOM refs ───────────────────────────────────────────────────────────────
-  const micBtn       = document.getElementById('micBtn');
-  const micLabel     = document.getElementById('micLabel');
-  const waveform     = document.getElementById('waveform');
-  const transcriptEl = document.getElementById('transcript');
-  const formatBtn    = document.getElementById('formatBtn');
-  const clearBtn     = document.getElementById('clearBtn');
-  const appendBtn    = document.getElementById('appendBtn');
-  const outputCard   = document.getElementById('outputCard');
-  const outputContent= document.getElementById('outputContent');
-  const copyBtn      = document.getElementById('copyBtn');
-  const historyList  = document.getElementById('historyList');
-  const historyCount = document.getElementById('historyCount');
-  const todayDisplay = document.getElementById('todayDisplay');
-  const toast        = document.getElementById('toast');
+  // ── DOM ───────────────────────────────────────────────────────────────────
+  const micBtn        = document.getElementById('micBtn');
+  const micLabel      = document.getElementById('micLabel');
+  const waveform      = document.getElementById('waveform');
+  const transcriptEl  = document.getElementById('transcript');
+  const formatBtn     = document.getElementById('formatBtn');
+  const clearBtn      = document.getElementById('clearBtn');
+  const appendBtn     = document.getElementById('appendBtn');
+  const outputCard    = document.getElementById('outputCard');
+  const outputContent = document.getElementById('outputContent');
+  const copyBtn       = document.getElementById('copyBtn');
+  const historyList   = document.getElementById('historyList');
+  const historyCount  = document.getElementById('historyCount');
+  const todayDisplay  = document.getElementById('todayDisplay');
+  const toast         = document.getElementById('toast');
 
-  // ── Init date ──────────────────────────────────────────────────────────────
-  const today = new Date();
+  // ── Date ──────────────────────────────────────────────────────────────────
+  const today    = new Date();
   const todayStr = `${today.getMonth()+1}/${today.getDate()}/${today.getFullYear()}`;
   document.getElementById('trackDate').value = todayStr;
   todayDisplay.textContent = `Today: ${todayStr}`;
 
-  // ── Speech Recognition ─────────────────────────────────────────────────────
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
+  // ── Speech API check ──────────────────────────────────────────────────────
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
     micBtn.innerHTML = '🚫';
-    micLabel.innerHTML = 'Speech recognition not supported.<br>Please use <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>.';
-    micBtn.disabled = true;
-    micBtn.style.borderColor = 'var(--warn)';
-    micBtn.style.color = 'var(--warn)';
+    micBtn.disabled  = true;
+    micBtn.style.cssText += 'border-color:var(--warn);color:var(--warn)';
+    micLabel.innerHTML = 'Use <strong>Chrome</strong> or <strong>Edge</strong> — speech recognition not available here.';
   }
 
-  // Check if running on file:// protocol and warn user
-  if (location.protocol === 'file:') {
-    micLabel.innerHTML = '⚠️ Open via a server for mic access. See tip below.';
-    const tip = document.createElement('div');
-    tip.style.cssText = 'background:#1a1200;border:1px solid #f0a000;border-radius:10px;padding:14px 18px;margin-top:12px;font-size:13px;color:#f0c040;line-height:1.7';
-    tip.innerHTML = `<strong>⚠️ Mic blocked on local files</strong><br>
-Browsers block microphone on <code>file://</code> URLs. Fix it one of these ways:<br><br>
-<strong>Option 1 (Easiest):</strong> Drag this file into <a href="https://stackblitz.com" target="_blank" style="color:var(--accent2)">stackblitz.com</a> or open it in <a href="https://codepen.io" target="_blank" style="color:var(--accent2)">codepen.io</a><br>
-<strong>Option 2:</strong> In Chrome, go to <code>chrome://flags</code> → search <em>"insecure origins"</em> → add your file path<br>
-<strong>Option 3:</strong> Run <code>npx serve .</code> in the folder, then open <code>http://localhost:3000</code><br>
-<strong>Meanwhile:</strong> You can still type or paste your day summary below and click Format ✨`;
-    document.querySelector('.mic-area').after(tip);
-  }
+  // ── Core: single-shot recognition session ─────────────────────────────────
+  // Instead of continuous=true (which is flaky on GitHub Pages),
+  // we use continuous=false and restart manually after each session.
+  // Every time a session ends we chain a new one if still recording.
+  function runSession() {
+    if (!isRecording) return;
 
-  function initRecognition() {
-    if (recognition) {
-      try { recognition.abort(); } catch(e) {}
-    }
-    recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-    recognition.maxAlternatives = 1;
+    const rec = new SR();
+    rec.continuous      = false;   // ← key fix: single utterance per session
+    rec.interimResults  = true;
+    rec.lang            = 'en-US';
+    rec.maxAlternatives = 1;
 
-    recognition.onstart = () => {
-      isRecording = true;
-      micBtn.classList.add('recording');
-      micBtn.innerHTML = '⏹️';
-      micLabel.textContent = 'Recording... speak clearly. Click again to stop.';
-      micLabel.classList.add('recording');
-      waveform.classList.add('active');
+    rec.onresult = (event) => {
+      let interim = '';
+      for (let i = 0; i < event.results.length; i++) {
+        const t = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          savedText += t + ' ';
+        } else {
+          interim = t;
+        }
+      }
+      // Update textarea live
+      transcriptEl.value = (savedText + interim).trim();
+      transcriptEl.scrollTop = transcriptEl.scrollHeight;
     };
 
-    recognition.onend = () => {
-      // Only restart if user hasn't explicitly stopped
+    rec.onend = () => {
+      // Ensure textarea always reflects what we have
+      transcriptEl.value = savedText.trim();
+      transcriptEl.scrollTop = transcriptEl.scrollHeight;
+      // Chain next session if still recording
       if (isRecording) {
-        try {
-          setTimeout(() => {
-            if (isRecording) recognition.start();
-          }, 200);
-        } catch(e) { /* ignore */ }
+        setTimeout(runSession, 100);
       }
     };
 
-    recognition.onerror = (e) => {
-      console.warn('Speech error:', e.error);
+    rec.onerror = (e) => {
       if (e.error === 'no-speech') {
-        // Silence — just ignore, recognition.onend will restart it
+        // Normal silence — session will end and restart automatically
         return;
       }
       if (e.error === 'not-allowed' || e.error === 'permission-denied') {
         stopRecording();
-        showToast('❌ Mic permission denied. Allow microphone in browser settings.');
-        micLabel.innerHTML = '❌ Mic blocked — click the 🔒 icon in your address bar and allow microphone.';
+        showToast('❌ Microphone permission denied.');
+        micLabel.innerHTML = '❌ Blocked — allow mic in browser settings then refresh.';
         return;
       }
-      if (e.error === 'network') {
-        // Chrome needs network for speech on some versions — just retry
-        return;
-      }
-      if (e.error === 'audio-capture') {
-        stopRecording();
-        showToast('❌ No microphone found. Check your mic is connected.');
-        micLabel.textContent = '❌ No microphone detected.';
-        return;
-      }
-      // For other errors, silently continue
-      console.warn('Unhandled speech error:', e.error);
+      // For network / aborted errors just let onend restart
     };
 
-    recognition.onresult = (event) => {
-      let finalChunk = '';
-      let interimChunk = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const text = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          finalChunk += text + ' ';
-        } else {
-          interimChunk += text;
-        }
-      }
-      // Commit finals immediately into fullTranscript
-      if (finalChunk) fullTranscript += finalChunk;
-      // Show finals + live interim
-      transcriptEl.value = (fullTranscript + interimChunk).trim();
-      transcriptEl.scrollTop = transcriptEl.scrollHeight;
-    };
+    try {
+      rec.start();
+    } catch (e) {
+      // Already started or other error — retry after short delay
+      setTimeout(() => { if (isRecording) runSession(); }, 300);
+    }
+  }
+
+  // ── Start / Stop ──────────────────────────────────────────────────────────
+  async function startRecording() {
+    // Ask for permission first so user sees the browser dialog
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (e) {
+      showToast('❌ Mic access denied — allow microphone and try again.');
+      micLabel.innerHTML = '❌ Mic blocked. Click 🔒 in address bar → allow microphone → refresh.';
+      return;
+    }
+
+    // Seed savedText with whatever is already in the textarea
+    savedText   = transcriptEl.value.trim();
+    if (savedText) savedText += ' ';
+    isRecording = true;
+
+    micBtn.classList.add('recording');
+    micBtn.innerHTML = '⏹️';
+    micLabel.textContent = '🔴 Recording... speak naturally. Click mic to stop.';
+    micLabel.classList.add('recording');
+    waveform.classList.add('active');
+
+    runSession();
   }
 
   function stopRecording() {
-    // Flag stopped FIRST so onend won't auto-restart
     isRecording = false;
-
-    if (recognition) {
-      const rec = recognition;
-      recognition = null;
-
-      // Use stop() not abort() — stop() flushes the last pending result, abort() discards it
-      rec.onend = () => {
-        transcriptEl.value = fullTranscript.trim();
-        transcriptEl.scrollTop = transcriptEl.scrollHeight;
-      };
-      try { rec.stop(); } catch(e) {
-        transcriptEl.value = fullTranscript.trim();
-      }
-    } else {
-      transcriptEl.value = fullTranscript.trim();
-    }
 
     micBtn.classList.remove('recording');
     micBtn.innerHTML = '🎤';
-    micLabel.textContent = '✅ Done! Edit transcript above if needed, then click Format.';
+    micLabel.textContent = '✅ Done! Edit above if needed, then click Format.';
     micLabel.classList.remove('recording');
     waveform.classList.remove('active');
+
+    // Final flush to textarea
+    transcriptEl.value = savedText.trim();
+    transcriptEl.scrollTop = transcriptEl.scrollHeight;
   }
 
-  micBtn.onclick = async () => {
-    if (!SpeechRecognition) return;
-
-    if (!isRecording) {
-      // Request mic permission explicitly first
-      try {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-      } catch (err) {
-        showToast('❌ Mic access denied. Allow microphone and try again.');
-        micLabel.innerHTML = '❌ Microphone access denied.<br>Click the 🔒 lock icon in your address bar → allow mic → refresh.';
-        return;
-      }
-
-      fullTranscript = transcriptEl.value.trim() ? transcriptEl.value.trim() + ' ' : '';
-      initRecognition();
-      try {
-        recognition.start();
-      } catch(e) {
-        showToast('Could not start recording: ' + e.message);
-        micLabel.textContent = 'Error starting mic. Refresh and try again.';
-      }
-    } else {
-      stopRecording();
-    }
+  micBtn.onclick = () => {
+    if (!SR) return;
+    isRecording ? stopRecording() : startRecording();
   };
 
-  // ── Format using Claude API ────────────────────────────────────────────────
+  // ── Format ────────────────────────────────────────────────────────────────
   formatBtn.onclick = async () => {
     const raw = transcriptEl.value.trim();
-    if (!raw) { showToast('Nothing to format yet. Speak or type first.'); return; }
+    if (!raw) { showToast('Nothing to format — speak or type first.'); return; }
 
-    const lastSNo   = parseInt(document.getElementById('lastSNo').value) || 279;
-    const dateVal   = document.getElementById('trackDate').value.trim() || todayStr;
-    const hoursDay  = parseFloat(document.getElementById('hoursPerDay').value) || 8;
+    const lastSNo  = parseInt(document.getElementById('lastSNo').value)  || 279;
+    const dateVal  = document.getElementById('trackDate').value.trim()   || todayStr;
+    const hoursDay = parseFloat(document.getElementById('hoursPerDay').value) || 8;
 
     formatBtn.innerHTML = '<div class="spinner"></div> Formatting...';
-    formatBtn.classList.add('btn-loading');
-    formatBtn.classList.remove('btn-primary');
+    formatBtn.classList.replace('btn-primary', 'btn-loading');
     formatBtn.disabled = true;
 
-    const systemPrompt = `You are a work tracker formatter. Convert raw voice/text summaries into tab-separated tracker rows.
+    const systemPrompt =
+`You are a work tracker formatter. Convert raw summaries into tab-separated rows.
 
-FORMAT (tab-separated, include header row on first call):
-S. NO\tDate\tTasks handled\tStatus\tComments / Challenges\tCategory\tImpact\tFrom\tTo\tTIME
+FORMAT (tab-separated, include header):
+S. NO	Date	Tasks handled	Status	Comments / Challenges	Category	Impact	From	To	TIME
 
 RULES:
-- Continue S.NO from the number provided (increment each row)
-- Status = always "Completed"
-- Category: "Production" (actual work output), "Meeting" (calls/standups), "Knowledge" (reading/reviewing), "Training"
-- Impact: quantified, professional phrasing like "Improved compliance by ~15%", "Reduced rework by ~30%", "Shipley score improved from X to Y" — infer realistic metrics based on task type
-- Times: realistic business hours (mostly 8:00:00–17:00:00 range), HH:MM:SS format, 24h
-- TIME column: duration as H:MM format (e.g. 1:30, 0:45, 2:00)
-- Total time per day MUST sum EXACTLY to ${hoursDay}:00 hours (${hoursDay * 60} minutes). If multiple days, each day = exactly ${hoursDay}:00. Distribute time sensibly: deep work tasks get 1–2.5h, meetings/standups get 0:15–1:00, quick tasks 0:15–0:30
-- Standup/daily sync = always near start of day (9:00–10:00 range)
-- Lunch gap is implicit — no row needed, just leave a gap in the From/To times
-- If date isn't mentioned, use: ${dateVal}
-- Comments/Challenges: concise, professional, 1 short sentence describing context or challenge faced
-- Tasks handled: clean, professional title (no first-person "I", use action-oriented phrasing)
-- Output ONLY the tab-separated rows (with header). No explanations, no markdown, no extra text.`;
+- Continue S.NO from the number given (increment each row)
+- Status = "Completed" always
+- Category: "Production" (work output), "Meeting" (calls/standups), "Knowledge" (reading/reviewing), "Training"
+- Impact: quantified e.g. "Improved compliance by ~15%", "Shipley score improved to 9.2", "Reduced rework by ~30%"
+- Times: HH:MM:SS 24h, business hours 8:00–18:00 range
+- TIME column: H:MM duration (e.g. 1:30, 0:45)
+- Each day MUST total EXACTLY ${hoursDay * 60} minutes. Multiple days = each exactly ${hoursDay}:00
+- Deep work 1–2.5h, standups 0:15–0:30, calls 0:30–1:00, quick tasks 0:15–0:30
+- Implicit lunch gap ~12:00–13:00 (no row)
+- Default date if none mentioned: ${dateVal}
+- Output ONLY the tab-separated table. No markdown, no explanations.`;
 
-    const userPrompt = `Last S.NO: ${lastSNo}
-Date (use this if not mentioned): ${dateVal}
-Hours per day: ${hoursDay}
+    const userPrompt =
+`Last S.NO: ${lastSNo}
+Date: ${dateVal}
+Hours/day: ${hoursDay}
 
-Raw summary:
+Raw notes:
 ${raw}
 
-Format this into tracker rows now.`;
+Format into tracker rows now.`;
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
+      const res  = await fetch('https://api.anthropic.com/v1/messages', {
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          system: systemPrompt,
-          messages: [{ role: 'user', content: userPrompt }]
+          model:      'claude-sonnet-4-20250514',
+          max_tokens: 2000,
+          system:     systemPrompt,
+          messages:   [{ role: 'user', content: userPrompt }]
         })
       });
-
-      const data = await response.json();
+      const data   = await res.json();
       const result = data.content?.[0]?.text?.trim() || '';
-
-      if (!result) throw new Error('Empty response from AI');
+      if (!result) throw new Error('empty');
 
       outputContent.textContent = result;
       outputCard.classList.add('visible');
 
+      // Auto-bump last S.NO
+      const dataRows = result.split('\n').filter(r => /^\d+\t/.test(r));
+      if (dataRows.length) {
+        const n = parseInt(dataRows[dataRows.length-1].split('\t')[0]);
+        if (!isNaN(n)) document.getElementById('lastSNo').value = n;
+      }
+
       // Save session
-      const session = {
-        id: Date.now(),
-        date: dateVal,
-        raw: raw,
-        formatted: result,
-        savedAt: new Date().toLocaleString()
-      };
-      sessions.unshift(session);
+      const sess = { id: Date.now(), date: dateVal, raw, formatted: result, savedAt: new Date().toLocaleString() };
+      sessions.unshift(sess);
       if (sessions.length > 20) sessions.pop();
       localStorage.setItem('tracker_sessions', JSON.stringify(sessions));
       renderHistory();
-
-      // Auto-update last S.NO
-      const rows = result.split('\n').filter(r => /^\d+\t/.test(r));
-      if (rows.length > 0) {
-        const lastRow = rows[rows.length - 1];
-        const lastNum = parseInt(lastRow.split('\t')[0]);
-        if (!isNaN(lastNum)) document.getElementById('lastSNo').value = lastNum;
-      }
-
-      showToast('✓ Formatted! Click "Copy All" to grab the rows.');
+      showToast('✓ Done! Click Copy All to grab your rows.');
 
     } catch (err) {
-      // Fallback: generate structured prompt for manual use
-      const fallbackOutput = generateFallbackOutput(raw, lastSNo, dateVal, hoursDay);
-      outputContent.textContent = fallbackOutput;
+      outputContent.textContent = fallback(raw, lastSNo, dateVal, hoursDay);
       outputCard.classList.add('visible');
-      showToast('AI unavailable — generated template. Edit as needed.');
+      showToast('Used fallback template — edit impacts/times as needed.');
     }
 
     formatBtn.innerHTML = '✨ Format as Tracker Rows';
-    formatBtn.classList.remove('btn-loading');
-    formatBtn.classList.add('btn-primary');
+    formatBtn.classList.replace('btn-loading', 'btn-primary');
     formatBtn.disabled = false;
   };
 
-  // ── Fallback output ────────────────────────────────────────────────────────
-  function generateFallbackOutput(raw, lastSNo, dateVal, hoursDay) {
-    const lines = raw.split(/[.,;!?\n]+/).map(l => l.trim()).filter(l => l.length > 8);
-    let sno = lastSNo + 1;
-    let rows = ['S. NO\tDate\tTasks handled\tStatus\tComments / Challenges\tCategory\tImpact\tFrom\tTo\tTIME'];
-
-    const totalMins = hoursDay * 60;
-    const perTask = Math.floor(totalMins / Math.max(lines.length, 1));
-    let cur = 8 * 60; // 8:00 in minutes
-
+  // ── Fallback ──────────────────────────────────────────────────────────────
+  function fallback(raw, lastSNo, dateVal, hoursDay) {
+    const lines    = raw.split(/[.\n!?]+/).map(l => l.trim()).filter(l => l.length > 6);
+    const total    = hoursDay * 60;
+    const perTask  = Math.floor(total / Math.max(lines.length, 1));
+    let sno = lastSNo + 1, cur = 8 * 60;
+    const pad = n => String(n).padStart(2,'0');
+    const toHMS = m => `${pad(Math.floor(m/60))}:${pad(m%60)}:00`;
+    const toDur = m => `${Math.floor(m/60)}:${pad(m%60)}`;
+    const rows = ['S. NO\tDate\tTasks handled\tStatus\tComments / Challenges\tCategory\tImpact\tFrom\tTo\tTIME'];
     lines.forEach((line, i) => {
-      const fromH = Math.floor(cur / 60).toString().padStart(2,'0');
-      const fromM = (cur % 60).toString().padStart(2,'0');
-      const dur = i === lines.length - 1 ? (totalMins - (cur - 8*60)) : perTask;
+      const from = cur;
+      const dur  = i === lines.length-1 ? total-(cur-8*60) : perTask;
       cur += dur;
-      // add lunch gap
-      if (cur >= 12*60 && cur < 13*60 && i < lines.length - 2) cur = 13 * 60;
-      const toH = Math.floor(cur / 60).toString().padStart(2,'0');
-      const toM  = (cur % 60).toString().padStart(2,'0');
-      const durH = Math.floor(dur / 60);
-      const durM = (dur % 60).toString().padStart(2,'0');
-
-      const cat = line.toLowerCase().includes('call') || line.toLowerCase().includes('standup') || line.toLowerCase().includes('meeting') ? 'Meeting' : 'Production';
-
-      rows.push([
-        sno++,
-        dateVal,
-        line.charAt(0).toUpperCase() + line.slice(1),
-        'Completed',
-        'Refer to raw notes for context',
-        cat,
-        'Improved output quality and task efficiency',
-        `${fromH}:${fromM}:00`,
-        `${toH}:${toM}:00`,
-        `${durH}:${durM}`
-      ].join('\t'));
+      if (cur >= 12*60 && cur < 13*60 && i < lines.length-2) cur = 13*60;
+      const cat = /call|standup|meeting/i.test(line) ? 'Meeting' : 'Production';
+      rows.push([sno++, dateVal, line.charAt(0).toUpperCase()+line.slice(1),
+        'Completed', 'Task completed as part of daily workstream', cat,
+        'Improved output quality and efficiency',
+        toHMS(from), toHMS(Math.min(cur, 18*60)), toDur(dur)].join('\t'));
     });
     return rows.join('\n');
   }
 
-  // ── Copy ───────────────────────────────────────────────────────────────────
+  // ── Copy ──────────────────────────────────────────────────────────────────
   copyBtn.onclick = () => {
-    const text = outputContent.textContent;
-    navigator.clipboard.writeText(text).then(() => {
+    navigator.clipboard.writeText(outputContent.textContent).then(() => {
       copyBtn.textContent = '✓ Copied!';
       copyBtn.classList.add('copied');
-      setTimeout(() => {
-        copyBtn.textContent = 'Copy All';
-        copyBtn.classList.remove('copied');
-      }, 2000);
+      setTimeout(() => { copyBtn.textContent = 'Copy All'; copyBtn.classList.remove('copied'); }, 2000);
     });
   };
 
-  // ── Clear & Append ─────────────────────────────────────────────────────────
+  // ── Clear / Add Day ────────────────────────────────────────────────────────
   clearBtn.onclick = () => {
     transcriptEl.value = '';
-    fullTranscript = '';
+    savedText = '';
     outputCard.classList.remove('visible');
     micLabel.textContent = 'Click to Start Recording';
   };
@@ -926,36 +851,34 @@ Format this into tracker rows now.`;
   appendBtn.onclick = () => {
     if (isRecording) stopRecording();
     const cur = transcriptEl.value.trim();
-    transcriptEl.value = cur + (cur ? '\n\n' : '') + '--- New Session ---\n';
-    fullTranscript = transcriptEl.value;
+    const next = cur + (cur ? '\n\n--- New Day ---\n' : '');
+    transcriptEl.value = next;
+    savedText = next;
     transcriptEl.focus();
-    showToast('Appended separator. Start speaking or typing the next day.');
+    showToast('Separator added. Record or type next day below it.');
   };
 
-  // ── History ────────────────────────────────────────────────────────────────
+  // ── History ───────────────────────────────────────────────────────────────
   function renderHistory() {
     historyCount.textContent = sessions.length;
-    if (sessions.length === 0) {
-      historyList.innerHTML = '<div class="empty-state">No saved sessions yet. Format your first day to see it here.</div>';
-      return;
-    }
-    historyList.innerHTML = sessions.map(s => `
-      <div class="history-item" onclick="loadSession(${s.id})">
-        <div class="history-date">${s.date}<br/><span style="color:var(--muted);font-size:10px">${s.savedAt}</span></div>
-        <div class="history-preview">${s.raw.slice(0, 120).replace(/\n/g, ' ')}…</div>
-        <button class="history-del" onclick="deleteSession(event, ${s.id})" title="Delete">✕</button>
-      </div>
-    `).join('');
+    historyList.innerHTML = sessions.length === 0
+      ? '<div class="empty-state">No saved sessions yet. Format your first day to see it here.</div>'
+      : sessions.map(s => `
+          <div class="history-item" onclick="loadSession(${s.id})">
+            <div class="history-date">${s.date}<br><span style="color:var(--muted);font-size:10px">${s.savedAt}</span></div>
+            <div class="history-preview">${s.raw.slice(0,110).replace(/\n/g,' ')}…</div>
+            <button class="history-del" onclick="deleteSession(event,${s.id})">✕</button>
+          </div>`).join('');
   }
 
-  window.loadSession = (id) => {
+  window.loadSession = id => {
     const s = sessions.find(x => x.id === id);
     if (!s) return;
     transcriptEl.value = s.raw;
-    fullTranscript = s.raw;
+    savedText = s.raw;
     outputContent.textContent = s.formatted;
     outputCard.classList.add('visible');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top:0, behavior:'smooth' });
     showToast('Session loaded.');
   };
 
@@ -966,14 +889,15 @@ Format this into tracker rows now.`;
     renderHistory();
   };
 
-  // ── Toast ──────────────────────────────────────────────────────────────────
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  let toastTimer;
   function showToast(msg) {
     toast.textContent = msg;
     toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3200);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
   }
 
-  // ── Init ───────────────────────────────────────────────────────────────────
   renderHistory();
 </script>
 </body>
