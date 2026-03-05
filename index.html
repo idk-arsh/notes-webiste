@@ -30,7 +30,6 @@
       flex-direction: column;
     }
 
-    /* Animated background */
     body::before {
       content: '';
       position: fixed;
@@ -51,12 +50,11 @@
       width: 100%;
     }
 
-    /* Header */
     .header {
       display: flex;
       align-items: flex-start;
       gap: 16px;
-      margin-bottom: 48px;
+      margin-bottom: 36px;
     }
 
     .logo-mark {
@@ -89,16 +87,68 @@
       margin-top: 4px;
     }
 
+    /* API Key bar */
+    .api-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .api-bar label {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    .api-key-input {
+      flex: 1;
+      min-width: 220px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 8px 12px;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+    }
+
+    .api-key-input:focus { outline: none; border-color: var(--accent); }
+
+    .api-info {
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .api-info a {
+      color: var(--accent2);
+      text-decoration: none;
+    }
+
+    .api-info a:hover { text-decoration: underline; }
+
     /* Config bar */
     .config-bar {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 16px 20px;
+      padding: 14px 18px;
       display: flex;
       gap: 16px;
       align-items: center;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       flex-wrap: wrap;
     }
 
@@ -132,7 +182,21 @@
       color: var(--accent);
     }
 
-    /* Voice recorder card */
+    /* Model selector */
+    .model-select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 8px 12px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .model-select:focus { outline: none; border-color: var(--accent); }
+    .model-select option { background: var(--surface2); }
+
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -142,7 +206,7 @@
     }
 
     .card-header {
-      padding: 16px 20px;
+      padding: 14px 20px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
@@ -157,7 +221,6 @@
 
     .card-body { padding: 24px; }
 
-    /* Mic button area */
     .mic-area {
       display: flex;
       flex-direction: column;
@@ -179,13 +242,9 @@
       align-items: center;
       justify-content: center;
       transition: all 0.2s ease;
-      position: relative;
     }
 
-    .mic-btn:hover {
-      background: rgba(79,255,176,0.08);
-      transform: scale(1.05);
-    }
+    .mic-btn:hover { background: rgba(79,255,176,0.08); transform: scale(1.05); }
 
     .mic-btn.recording {
       border-color: var(--recording);
@@ -194,39 +253,21 @@
     }
 
     @keyframes pulse-ring {
-      0% { box-shadow: 0 0 0 0 rgba(255,71,87,0.5); }
-      70% { box-shadow: 0 0 0 20px rgba(255,71,87,0); }
+      0%   { box-shadow: 0 0 0 0 rgba(255,71,87,0.5); }
+      70%  { box-shadow: 0 0 0 20px rgba(255,71,87,0); }
       100% { box-shadow: 0 0 0 0 rgba(255,71,87,0); }
     }
 
-    .mic-label {
-      font-family: 'DM Mono', monospace;
-      font-size: 13px;
-      color: var(--muted);
-      letter-spacing: 0.05em;
-    }
-
+    .mic-label { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--muted); letter-spacing: 0.05em; }
     .mic-label.recording { color: var(--recording); }
 
-    /* Waveform */
-    .waveform {
-      display: flex;
-      align-items: center;
-      gap: 3px;
-      height: 36px;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-
+    .waveform { display: flex; align-items: center; gap: 3px; height: 36px; opacity: 0; transition: opacity 0.3s; }
     .waveform.active { opacity: 1; }
 
     .wave-bar {
-      width: 3px;
-      border-radius: 2px;
-      background: var(--recording);
+      width: 3px; border-radius: 2px; background: var(--recording);
       animation: wave-anim 0.8s ease-in-out infinite;
     }
-
     .wave-bar:nth-child(1) { animation-delay: 0s; }
     .wave-bar:nth-child(2) { animation-delay: 0.1s; }
     .wave-bar:nth-child(3) { animation-delay: 0.2s; }
@@ -237,12 +278,8 @@
     .wave-bar:nth-child(8) { animation-delay: 0.1s; }
     .wave-bar:nth-child(9) { animation-delay: 0s; }
 
-    @keyframes wave-anim {
-      0%, 100% { height: 6px; }
-      50% { height: 28px; }
-    }
+    @keyframes wave-anim { 0%, 100% { height: 6px; } 50% { height: 28px; } }
 
-    /* Transcript area */
     .transcript-area {
       width: 100%;
       min-height: 130px;
@@ -260,16 +297,9 @@
     }
 
     .transcript-area:focus { outline: none; border-color: var(--accent); }
-
     .transcript-area::placeholder { color: var(--muted); }
 
-    /* Action buttons */
-    .actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 16px;
-      flex-wrap: wrap;
-    }
+    .actions { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
 
     .btn {
       padding: 11px 22px;
@@ -285,29 +315,15 @@
       gap: 8px;
     }
 
-    .btn-primary {
-      background: var(--accent);
-      color: #000;
-    }
-
+    .btn-primary { background: var(--accent); color: #000; }
     .btn-primary:hover { background: #3de8a0; transform: translateY(-1px); }
     .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-    .btn-ghost {
-      background: transparent;
-      color: var(--muted);
-      border: 1px solid var(--border);
-    }
-
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
     .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
 
-    .btn-loading {
-      background: var(--surface2);
-      color: var(--muted);
-      cursor: wait;
-    }
+    .btn-loading { background: var(--surface2); color: var(--muted); cursor: wait; }
 
-    /* Spinner */
     .spinner {
       width: 16px; height: 16px;
       border: 2px solid transparent;
@@ -317,7 +333,6 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Output section */
     .output-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -325,7 +340,6 @@
       overflow: hidden;
       display: none;
     }
-
     .output-card.visible { display: block; }
 
     .output-header {
@@ -356,7 +370,6 @@
       font-family: 'DM Sans', sans-serif;
       transition: all 0.2s;
     }
-
     .copy-btn:hover { background: rgba(79,255,176,0.1); }
     .copy-btn.copied { background: var(--accent); color: #000; }
 
@@ -372,10 +385,7 @@
       overflow-y: auto;
     }
 
-    /* Saved entries */
-    .history-section {
-      margin-top: 32px;
-    }
+    .history-section { margin-top: 32px; }
 
     .history-title {
       font-family: 'Syne', sans-serif;
@@ -410,83 +420,38 @@
       cursor: pointer;
       transition: border-color 0.2s;
     }
-
     .history-item:hover { border-color: var(--accent2); }
 
-    .history-date {
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      color: var(--accent2);
-      white-space: nowrap;
-      padding-top: 2px;
-    }
-
-    .history-preview {
-      font-size: 13px;
-      color: var(--muted);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      flex: 1;
-    }
+    .history-date { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent2); white-space: nowrap; padding-top: 2px; }
+    .history-preview { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 
     .history-del {
-      background: none;
-      border: none;
-      color: var(--muted);
-      cursor: pointer;
-      font-size: 14px;
-      padding: 0 4px;
-      opacity: 0.5;
-      transition: opacity 0.2s;
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; font-size: 14px; padding: 0 4px;
+      opacity: 0.5; transition: opacity 0.2s;
     }
-
     .history-del:hover { opacity: 1; color: var(--warn); }
 
     .empty-state {
-      text-align: center;
-      padding: 32px;
-      color: var(--muted);
-      font-size: 13px;
-      border: 1px dashed var(--border);
-      border-radius: 10px;
+      text-align: center; padding: 32px; color: var(--muted);
+      font-size: 13px; border: 1px dashed var(--border); border-radius: 10px;
     }
 
-    /* Toast */
     .toast {
-      position: fixed;
-      bottom: 32px;
-      left: 50%;
+      position: fixed; bottom: 32px; left: 50%;
       transform: translateX(-50%) translateY(80px);
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px 24px;
-      font-size: 14px;
-      color: var(--text);
-      z-index: 100;
-      transition: transform 0.3s ease, opacity 0.3s;
-      opacity: 0;
-      pointer-events: none;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 24px;
+      font-size: 14px; color: var(--text);
+      z-index: 100; transition: transform 0.3s ease, opacity 0.3s;
+      opacity: 0; pointer-events: none;
     }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-    .toast.show {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 2px 10px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-family: 'DM Mono', monospace;
-    }
-
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-family: 'DM Mono', monospace; }
     .badge-green { background: rgba(79,255,176,0.12); color: var(--accent); }
     .badge-blue  { background: rgba(0,207,255,0.12);  color: var(--accent2); }
 
-    /* Scrollbar */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: var(--bg); }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
@@ -505,10 +470,26 @@
     </div>
   </div>
 
+  <!-- OpenRouter API Key -->
+  <div class="api-bar">
+    <label>OpenRouter API Key</label>
+    <input type="password" class="api-key-input" id="apiKey" placeholder="sk-or-v1-xxxxxxxxxxxxxxxx" />
+    <select class="model-select" id="modelSelect">
+      <option value="deepseek/deepseek-r1:free" selected>DeepSeek R1 (free)</option>
+      <option value="google/gemini-flash-1.5">Gemini Flash 1.5 (free)</option>
+      <option value="google/gemini-2.0-flash-exp:free">Gemini Flash 2.0 (free)</option>
+      <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (free)</option>
+      <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (free)</option>
+    </select>
+    <div class="api-info">
+      🔑 Get free key at <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a>
+    </div>
+  </div>
+
   <!-- Config bar -->
   <div class="config-bar">
     <label>Last S.NO</label>
-    <input type="number" id="lastSNo" value="279" min="1" title="Last serial number in your tracker"/>
+    <input type="number" id="lastSNo" value="279" min="1" />
     <div class="config-sep"></div>
     <label>Date</label>
     <input type="text" id="trackDate" placeholder="e.g. 3/4/2026" style="width:110px"/>
@@ -522,7 +503,8 @@
   <div class="card">
     <div class="card-header">
       <span style="color: var(--accent)">●</span> Voice Input
-      <span class="badge badge-green">Browser Speech Recognition — No API Key</span>
+      <span class="badge badge-green">Browser Speech — Chrome/Edge</span>
+      <span class="badge badge-blue" style="margin-left:auto">OpenRouter AI</span>
     </div>
     <div class="card-body">
 
@@ -547,11 +529,9 @@
       </textarea>
 
       <div class="actions">
-        <button class="btn btn-primary" id="formatBtn">
-          ✨ Format as Tracker Rows
-        </button>
+        <button class="btn btn-primary" id="formatBtn">✨ Format as Tracker Rows</button>
         <button class="btn btn-ghost" id="clearBtn">Clear</button>
-        <button class="btn btn-ghost" id="appendBtn">➕ Append New Session</button>
+        <button class="btn btn-ghost" id="appendBtn">➕ New Day</button>
       </div>
 
     </div>
@@ -577,16 +557,15 @@
 
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-  // ── State ─────────────────────────────────────────────────────────────────
-  let isRecording   = false;
-  let savedText     = '';   // all committed final text so far
-  let sessions      = JSON.parse(localStorage.getItem('tracker_sessions') || '[]');
+  // ── State ──────────────────────────────────────────────────────────────────
+  let isRecording = false;
+  let savedText   = '';
+  let sessions    = JSON.parse(localStorage.getItem('tracker_sessions') || '[]');
 
-  // ── DOM ───────────────────────────────────────────────────────────────────
+  // ── DOM ────────────────────────────────────────────────────────────────────
   const micBtn        = document.getElementById('micBtn');
   const micLabel      = document.getElementById('micLabel');
   const waveform      = document.getElementById('waveform');
@@ -601,6 +580,10 @@
   const historyCount  = document.getElementById('historyCount');
   const todayDisplay  = document.getElementById('todayDisplay');
   const toast         = document.getElementById('toast');
+  const apiKeyEl      = document.getElementById('apiKey');
+  const modelSelectEl = document.getElementById('modelSelect');
+
+  // API key is NOT saved — user pastes it each session for security
 
   // ── Date ──────────────────────────────────────────────────────────────────
   const today    = new Date();
@@ -608,112 +591,75 @@
   document.getElementById('trackDate').value = todayStr;
   todayDisplay.textContent = `Today: ${todayStr}`;
 
-  // ── Speech API check ──────────────────────────────────────────────────────
+  // ── Speech API ─────────────────────────────────────────────────────────────
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
     micBtn.innerHTML = '🚫';
     micBtn.disabled  = true;
     micBtn.style.cssText += 'border-color:var(--warn);color:var(--warn)';
-    micLabel.innerHTML = 'Use <strong>Chrome</strong> or <strong>Edge</strong> — speech recognition not available here.';
+    micLabel.innerHTML = 'Use <strong>Chrome</strong> or <strong>Edge</strong> for speech recognition.';
   }
 
-  // ── Core: single-shot recognition session ─────────────────────────────────
-  // Instead of continuous=true (which is flaky on GitHub Pages),
-  // we use continuous=false and restart manually after each session.
-  // Every time a session ends we chain a new one if still recording.
   function runSession() {
     if (!isRecording) return;
-
     const rec = new SR();
-    rec.continuous      = false;   // ← key fix: single utterance per session
-    rec.interimResults  = true;
-    rec.lang            = 'en-US';
-    rec.maxAlternatives = 1;
+    rec.continuous = false;
+    rec.interimResults = true;
+    rec.lang = 'en-US';
 
     rec.onresult = (event) => {
       let interim = '';
       for (let i = 0; i < event.results.length; i++) {
         const t = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          savedText += t + ' ';
-        } else {
-          interim = t;
-        }
+        if (event.results[i].isFinal) savedText += t + ' ';
+        else interim = t;
       }
-      // Update textarea live
       transcriptEl.value = (savedText + interim).trim();
       transcriptEl.scrollTop = transcriptEl.scrollHeight;
     };
 
     rec.onend = () => {
-      // Ensure textarea always reflects what we have
       transcriptEl.value = savedText.trim();
-      transcriptEl.scrollTop = transcriptEl.scrollHeight;
-      // Chain next session if still recording
-      if (isRecording) {
-        setTimeout(runSession, 100);
-      }
+      if (isRecording) setTimeout(runSession, 100);
     };
 
     rec.onerror = (e) => {
-      if (e.error === 'no-speech') {
-        // Normal silence — session will end and restart automatically
-        return;
-      }
+      if (e.error === 'no-speech') return;
       if (e.error === 'not-allowed' || e.error === 'permission-denied') {
         stopRecording();
         showToast('❌ Microphone permission denied.');
-        micLabel.innerHTML = '❌ Blocked — allow mic in browser settings then refresh.';
-        return;
       }
-      // For network / aborted errors just let onend restart
     };
 
-    try {
-      rec.start();
-    } catch (e) {
-      // Already started or other error — retry after short delay
-      setTimeout(() => { if (isRecording) runSession(); }, 300);
-    }
+    try { rec.start(); } catch (e) { setTimeout(() => { if (isRecording) runSession(); }, 300); }
   }
 
-  // ── Start / Stop ──────────────────────────────────────────────────────────
   async function startRecording() {
-    // Ask for permission first so user sees the browser dialog
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (e) {
-      showToast('❌ Mic access denied — allow microphone and try again.');
-      micLabel.innerHTML = '❌ Mic blocked. Click 🔒 in address bar → allow microphone → refresh.';
+      showToast('❌ Mic access denied.');
       return;
     }
-
-    // Seed savedText with whatever is already in the textarea
-    savedText   = transcriptEl.value.trim();
+    savedText = transcriptEl.value.trim();
     if (savedText) savedText += ' ';
     isRecording = true;
-
     micBtn.classList.add('recording');
     micBtn.innerHTML = '⏹️';
-    micLabel.textContent = '🔴 Recording... speak naturally. Click mic to stop.';
+    micLabel.textContent = '🔴 Recording... speak naturally. Click to stop.';
     micLabel.classList.add('recording');
     waveform.classList.add('active');
-
     runSession();
   }
 
   function stopRecording() {
     isRecording = false;
-
     micBtn.classList.remove('recording');
     micBtn.innerHTML = '🎤';
     micLabel.textContent = '✅ Done! Edit above if needed, then click Format.';
     micLabel.classList.remove('recording');
     waveform.classList.remove('active');
-
-    // Final flush to textarea
     transcriptEl.value = savedText.trim();
-    transcriptEl.scrollTop = transcriptEl.scrollHeight;
   }
 
   micBtn.onclick = () => {
@@ -721,14 +667,22 @@
     isRecording ? stopRecording() : startRecording();
   };
 
-  // ── Format ────────────────────────────────────────────────────────────────
+  // ── Format via OpenRouter ──────────────────────────────────────────────────
   formatBtn.onclick = async () => {
     const raw = transcriptEl.value.trim();
     if (!raw) { showToast('Nothing to format — speak or type first.'); return; }
 
+    const apiKey   = apiKeyEl.value.trim();
+    const model    = modelSelectEl.value;
     const lastSNo  = parseInt(document.getElementById('lastSNo').value)  || 279;
     const dateVal  = document.getElementById('trackDate').value.trim()   || todayStr;
     const hoursDay = parseFloat(document.getElementById('hoursPerDay').value) || 8;
+
+    if (!apiKey) {
+      showToast('⚠️ Paste your OpenRouter API key above first. It\'s free!');
+      apiKeyEl.focus();
+      return;
+    }
 
     formatBtn.innerHTML = '<div class="spinner"></div> Formatting...';
     formatBtn.classList.replace('btn-primary', 'btn-loading');
@@ -737,21 +691,21 @@
     const systemPrompt =
 `You are a work tracker formatter. Convert raw summaries into tab-separated rows.
 
-FORMAT (tab-separated, include header):
-S. NO	Date	Tasks handled	Status	Comments / Challenges	Category	Impact	From	To	TIME
+FORMAT (tab-separated, include header row):
+S. NO\tDate\tTasks handled\tStatus\tComments / Challenges\tCategory\tImpact\tFrom\tTo\tTIME
 
 RULES:
 - Continue S.NO from the number given (increment each row)
 - Status = "Completed" always
 - Category: "Production" (work output), "Meeting" (calls/standups), "Knowledge" (reading/reviewing), "Training"
 - Impact: quantified e.g. "Improved compliance by ~15%", "Shipley score improved to 9.2", "Reduced rework by ~30%"
-- Times: HH:MM:SS 24h, business hours 8:00–18:00 range
-- TIME column: H:MM duration (e.g. 1:30, 0:45)
+- Times: HH:MM:SS 24h format, business hours 8:00–18:00 range
+- TIME column: H:MM duration format (e.g. 1:30, 0:45)
 - Each day MUST total EXACTLY ${hoursDay * 60} minutes. Multiple days = each exactly ${hoursDay}:00
 - Deep work 1–2.5h, standups 0:15–0:30, calls 0:30–1:00, quick tasks 0:15–0:30
-- Implicit lunch gap ~12:00–13:00 (no row)
+- Implicit lunch gap ~12:00–13:00 (no row for lunch)
 - Default date if none mentioned: ${dateVal}
-- Output ONLY the tab-separated table. No markdown, no explanations.`;
+- Output ONLY the tab-separated table. No markdown, no explanations, no backticks.`;
 
     const userPrompt =
 `Last S.NO: ${lastSNo}
@@ -764,32 +718,49 @@ ${raw}
 Format into tracker rows now.`;
 
     try {
-      const res  = await fetch('https://api.anthropic.com/v1/messages', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+          'HTTP-Referer': window.location.href,
+          'X-Title': 'Daily Tracker Voice Logger'
+        },
         body: JSON.stringify({
-          model:      'claude-sonnet-4-20250514',
+          model: model,
           max_tokens: 2000,
-          system:     systemPrompt,
-          messages:   [{ role: 'user', content: userPrompt }]
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user',   content: userPrompt }
+          ]
         })
       });
-      const data   = await res.json();
-      const result = data.content?.[0]?.text?.trim() || '';
-      if (!result) throw new Error('empty');
 
-      outputContent.textContent = result;
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        const msg = err?.error?.message || `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+
+      const data   = await res.json();
+      const result = data.choices?.[0]?.message?.content?.trim() || '';
+      if (!result) throw new Error('Empty response');
+
+      // Strip any accidental markdown fences
+      const cleaned = result.replace(/^```[^\n]*\n?/gm, '').replace(/```$/gm, '').trim();
+
+      outputContent.textContent = cleaned;
       outputCard.classList.add('visible');
 
-      // Auto-bump last S.NO
-      const dataRows = result.split('\n').filter(r => /^\d+\t/.test(r));
+      // Auto-bump S.NO
+      const dataRows = cleaned.split('\n').filter(r => /^\d+\t/.test(r));
       if (dataRows.length) {
         const n = parseInt(dataRows[dataRows.length-1].split('\t')[0]);
         if (!isNaN(n)) document.getElementById('lastSNo').value = n;
       }
 
       // Save session
-      const sess = { id: Date.now(), date: dateVal, raw, formatted: result, savedAt: new Date().toLocaleString() };
+      const sess = { id: Date.now(), date: dateVal, raw, formatted: cleaned, savedAt: new Date().toLocaleString() };
       sessions.unshift(sess);
       if (sessions.length > 20) sessions.pop();
       localStorage.setItem('tracker_sessions', JSON.stringify(sessions));
@@ -797,9 +768,12 @@ Format into tracker rows now.`;
       showToast('✓ Done! Click Copy All to grab your rows.');
 
     } catch (err) {
-      outputContent.textContent = fallback(raw, lastSNo, dateVal, hoursDay);
+      console.error(err);
+      // Fallback
+      const fb = fallback(raw, lastSNo, dateVal, hoursDay);
+      outputContent.textContent = fb;
       outputCard.classList.add('visible');
-      showToast('Used fallback template — edit impacts/times as needed.');
+      showToast(`⚠️ AI error: ${err.message}. Using fallback template.`);
     }
 
     formatBtn.innerHTML = '✨ Format as Tracker Rows';
@@ -807,24 +781,24 @@ Format into tracker rows now.`;
     formatBtn.disabled = false;
   };
 
-  // ── Fallback ──────────────────────────────────────────────────────────────
+  // ── Fallback ───────────────────────────────────────────────────────────────
   function fallback(raw, lastSNo, dateVal, hoursDay) {
-    const lines    = raw.split(/[.\n!?]+/).map(l => l.trim()).filter(l => l.length > 6);
-    const total    = hoursDay * 60;
-    const perTask  = Math.floor(total / Math.max(lines.length, 1));
+    const lines   = raw.split(/[.\n!?]+/).map(l => l.trim()).filter(l => l.length > 6);
+    const total   = hoursDay * 60;
+    const perTask = Math.floor(total / Math.max(lines.length, 1));
     let sno = lastSNo + 1, cur = 8 * 60;
-    const pad = n => String(n).padStart(2,'0');
+    const pad   = n => String(n).padStart(2, '0');
     const toHMS = m => `${pad(Math.floor(m/60))}:${pad(m%60)}:00`;
     const toDur = m => `${Math.floor(m/60)}:${pad(m%60)}`;
-    const rows = ['S. NO\tDate\tTasks handled\tStatus\tComments / Challenges\tCategory\tImpact\tFrom\tTo\tTIME'];
+    const rows  = ['S. NO\tDate\tTasks handled\tStatus\tComments / Challenges\tCategory\tImpact\tFrom\tTo\tTIME'];
     lines.forEach((line, i) => {
       const from = cur;
-      const dur  = i === lines.length-1 ? total-(cur-8*60) : perTask;
+      const dur  = i === lines.length - 1 ? total - (cur - 8*60) : perTask;
       cur += dur;
-      if (cur >= 12*60 && cur < 13*60 && i < lines.length-2) cur = 13*60;
+      if (cur >= 12*60 && cur < 13*60 && i < lines.length - 2) cur = 13*60;
       const cat = /call|standup|meeting/i.test(line) ? 'Meeting' : 'Production';
-      rows.push([sno++, dateVal, line.charAt(0).toUpperCase()+line.slice(1),
-        'Completed', 'Task completed as part of daily workstream', cat,
+      rows.push([sno++, dateVal, line.charAt(0).toUpperCase() + line.slice(1),
+        'Completed', 'Completed as part of daily workstream', cat,
         'Improved output quality and efficiency',
         toHMS(from), toHMS(Math.min(cur, 18*60)), toDur(dur)].join('\t'));
     });
@@ -840,7 +814,7 @@ Format into tracker rows now.`;
     });
   };
 
-  // ── Clear / Add Day ────────────────────────────────────────────────────────
+  // ── Clear / New Day ────────────────────────────────────────────────────────
   clearBtn.onclick = () => {
     transcriptEl.value = '';
     savedText = '';
@@ -850,15 +824,15 @@ Format into tracker rows now.`;
 
   appendBtn.onclick = () => {
     if (isRecording) stopRecording();
-    const cur = transcriptEl.value.trim();
+    const cur  = transcriptEl.value.trim();
     const next = cur + (cur ? '\n\n--- New Day ---\n' : '');
     transcriptEl.value = next;
     savedText = next;
     transcriptEl.focus();
-    showToast('Separator added. Record or type next day below it.');
+    showToast('Separator added — record or type next day below it.');
   };
 
-  // ── History ───────────────────────────────────────────────────────────────
+  // ── History ────────────────────────────────────────────────────────────────
   function renderHistory() {
     historyCount.textContent = sessions.length;
     historyList.innerHTML = sessions.length === 0
@@ -878,7 +852,7 @@ Format into tracker rows now.`;
     savedText = s.raw;
     outputContent.textContent = s.formatted;
     outputCard.classList.add('visible');
-    window.scrollTo({ top:0, behavior:'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     showToast('Session loaded.');
   };
 
@@ -889,13 +863,13 @@ Format into tracker rows now.`;
     renderHistory();
   };
 
-  // ── Toast ─────────────────────────────────────────────────────────────────
+  // ── Toast ──────────────────────────────────────────────────────────────────
   let toastTimer;
   function showToast(msg) {
     toast.textContent = msg;
     toast.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
   }
 
   renderHistory();
